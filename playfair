@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 import cgi
-from typing import List
+from typing import List, Tuple, Union
+from textwrap import wrap
 
 # -- CGI definitions
 print("Content-Type: text/plain")
@@ -16,16 +17,138 @@ LETTERS: str = "abcdefghiklmnopqrstuvwxyz"
 Board = List[List[str]]
 
 # -- List functions
-def get_rowal(board: Board, x: str, y: str, decrypt: bool = False):
+def get_rowal(board: Board, x: str, y: str,
+              decrypt: bool = False) -> Union[str, bool]:
     move: int = 1 if not decrypt else -1
 
-    x_idx: int
+    for row in board:
+        try:
+            x_idx: int = row.index(x)
+            y_idx: int = row.index(y)
+        except ValueError:
+            continue
+
+        if x_idx >= 0 and y_idx >= 0:
+            return (row[(x_idx + move) % WIDTH] +
+                    row[(y_idx + move) % WIDTH])
+
+    else:
+        return False
 
 
+def transpose(board: Board) -> Board:
+    return [[row[i] for row in board]
+            for i in range(len(board[0]))]
+
+# prolly that function might be merged and simplified
+# with get_rowal
+def get_columnar(board: Board, x: str, y: str,
+                 decrypt: bool = False) -> Union[str, bool]:
+    move: int = 1 if not decrypt else -1
+
+    transposed: Board = transpose(board)
+    for row in transposed:
+        try:
+            x_idx: int = row.index(x)
+            y_idx: int = row.index(y)
+        except ValueError:
+            continue
+
+        if x_idx >= 0 and y_idx >= 0:
+            return (row[(x_idx + move) % WIDTH] +
+                    row[(y_idx + move) % WIDTH])
+
+    else:
+        return False
+
+def get_coords(board: Board, char: str) -> Tuple[int, int]:
+    for row_idx, row in enumerate(board):
+        for c_idx, c in enumerate(row):
+            if c == char:
+                return [row_idx, c_idx]
+
+def get_contrary(board: Board, x: str, y: str) -> str:
+    if DEBUG:
+        print("Processing " + x + " and " + y)
+
+    x_row, x_col = get_coords(board, x)
+    y_row, y_col = get_coords(board, y)
+
+    return board[x_row][y_col] + board[y_row][x_col]
+
+def make_diags(content: str):
+    content: str = content.replace(" ", "")
+    content: str = content.replace("j", "i")
+
+    output: str = []
+
+    for i in range(0, len(content), 2):
+        try:
+            f = content[i]
+            s = content[i+1]
+        except IndexError:
+            print(f"last letter '{f}' has no pair")
+            # if there is no second letter
+            s = R_CHAR
+
+        # if both letters are the same, add "x" and move cursor back
+        if f == s:
+            print(f"found the same: {f}")
+            s = R_CHAR
+            i -= 1
+
+        output.append(f + s)
+
+    return output
+
+
+def make_board(keyword: str) -> Board:
+    keyword: str = keyword.replace("j", "i")
+    ordered: str = "".join(list(dict.fromkeys(keyword)))
+    board_content: str = "".join(list(dict.fromkeys(ordered + LETTERS)))
+
+    board: Board = [["x"]*WIDTH for _ in range(WIDTH)]
+    for x in range(WIDTH):
+        for y in range(WIDTH):
+            board[x][y] = board_content[x * WIDTH + y]
+
+    return board
+
+def pp_board(board: Board) -> None:
+    for row in board:
+        print(" ".join(row))
+
+def encrypt(keyword: str, content: str) -> str:
+    board: Board = make_board(keyword)
+    diags: List[str] = make_diags(content)
+
+    output: str = ""
+
+    for diag in diags:
+        f, s = diag
+        output += (get_rowal(board, f, s)
+                   or get_columnar(board, f, s)
+                   or get_contrary(board, f, s))
+
+    return output
+
+def decrypt(keyword: str, content: str) -> str:
+    board: Board = make_board(keyword)
+    diags: List[str] = make_diags(content)
+
+    output: str = ""
+
+    for diag in diags:
+        f, s = diag
+        output += (get_rowal(board, *diag, False)
+                   or get_columnar(board, *diag, False)
+                   or get_contrary(board, *diag))
+
+    return output
 
 # -- Input handling
 args = cgi.parse()
 
-keyword: str = args["keyword"]
-content: str = args["content"]
-decrypt: bool = bool(args["decrypt"])
+# keyword: str = args["keyword"]
+# content: str = args["content"]
+# decrypt: bool = bool(args["decrypt"])
