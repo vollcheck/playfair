@@ -1,0 +1,31 @@
+#!/usr/bin/python3
+
+import cgi
+from typing import List
+
+# -- CGI definitions
+print("Content-Type: text/plain")
+
+# -- Constants
+DEBUG: bool = False
+WIDTH: int = 5
+R_CHAR: str = "x"
+LETTERS: str = "abcdefghiklmnopqrstuvwxyz"
+
+# -- Types
+Board = List[List[str]]
+
+# -- List functions
+def get_rowal(board: Board, x: str, y: str, decrypt: bool = False):
+    move: int = 1 if not decrypt else -1
+
+    x_idx: int
+
+
+
+# -- Input handling
+args = cgi.parse()
+
+keyword: str = args["keyword"]
+content: str = args["content"]
+decrypt: bool = bool(args["decrypt"])
