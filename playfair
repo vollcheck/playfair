@@ -146,9 +146,15 @@ def decrypt(keyword: str, content: str) -> str:
 
     return output
 
+
 # -- Input handling
 args = cgi.parse()
 
-# keyword: str = args["keyword"]
-# content: str = args["content"]
-# decrypt: bool = bool(args["decrypt"])
+keyword: str = args["keyword"]
+content: str = args["content"]
+decrypt: bool = bool(args["decrypt"])
+
+if not decrypt:
+    encrypt(keyword, content)
+else:
+    decrypt(keyword, content)
